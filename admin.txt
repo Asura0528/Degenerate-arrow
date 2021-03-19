@@ -1,0 +1,7 @@
+Mobile: 13060617326
+用户名: 13060617326
+电子邮件地址: 467529106@qq.com
+密码: axl980528
+
+修改密码命令：
+python manager.py changepassword 用户名

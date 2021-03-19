@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">  
+  	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<title>帖子</title>
+	{% load staticfiles %}
+	<link rel="icon" href="{% static 'img/logo_Degenerate_arrow.png' %}">
+	<link rel="stylesheet" href="{% static 'lib/bootstrap-4.5.0-dist/css/bootstrap.min.css' %}">
+	<link rel="stylesheet" href="{% static 'lib/animate.min.css' %}">
+    <link rel="stylesheet" href="{% static 'lib/jquery.pagination.css' %}">
+    <link rel="stylesheet" href="{% static 'lib/fontawesome/css/all.min.css' %}">
+	<link rel="stylesheet" href="{% static 'css/blog.css' %}">
+	<script src="{% static 'lib/vue-2.5.16.js'%}"></script>
+    <script src="{% static 'lib/axios-0.18.0.min.js' %}"></script>
+    <script src="{% static 'lib/jquery-3.5.1.min.js'%}"></script>
+    <script src="{% static 'lib/jquery.cookie.js'%}"></script>
+	<script src="{% static 'lib/bootstrap-4.5.0-dist/js/bootstrap.min.js' %}"></script>
+</head>
+<body>
+<div id="app">
+	<canvas id="live2d" width="500" height="500" class="live2d d-none d-xl-block" style="position: fixed; opacity: 1; left: -100px; bottom: 0px; z-index: 99999; pointer-events: none;"></canvas>
+	<!-- 个人信息侧边栏 -->
+	<div class="informationBox col-xl-2 d-none d-xl-block" id="informationBox">
+		<div class="imgBox">
+            {% if avatar %}
+                <img src="{{ avatar }}" style="height: 200px;width: 200px" alt="">
+            {% else %}
+                <img src="{% static 'img/logo_rhodes.png' %}" style="height: 200px;width: 200px" alt="">
+            {% endif %}
+		</div>
+		<div class="messageBox">
+			<!-- 如果没有登录则显示登录按钮 -->
+            <div class="loginBox" v-if="is_login">
+                <h4 class="text-white">[[username]]</h4>
+                <a class="btn btn-light btn-block" href="{% url 'users:home' %}">个人中心</a>
+                <a class="btn btn-light btn-block" href="{% url 'users:logout' %}">退出登录</a>
+            </div>
+			<div class="loginBox" v-else>
+				<button class="btn btn-secondary btn-block" data-toggle="modal" data-target="#logon">注册</button>
+				<button class="btn btn-light btn-block" data-toggle="modal" data-target="#login">登录</button>
+			</div>
+		</div>
+	</div>
+
+	<!-- 注册模态 -->
+	<div class="modal fade" id="logon">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title" id="logonLabel">
+						注册
+					</h5>
+					<button  class="close" data-dismiss="modal">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body">
+					<div class="container-fluid">
+						<form class="login" id="logon_form" method="POST">
+                            {% csrf_token %}
+                            <!--手机号-->
+                            <div class="form-group">
+                                <label >手机号: </label>
+                                <div class="col-lg-12">
+                                    <input type="text" name="mobile" placeholder="请输入手机号" autofocus="autofocus" required
+                                           id="id_logon" class="form-control" v-model="mobile" />
+                                </div>
+                                <small class="form-text text-muted ml-1 text-right" v-show="mobile_error" >[[mobile_error_message]]</small>
+                            </div>
+                            <!--密码-->
+                            <div class="form-group">
+                                <label >密码:</label>
+                                <div class="col-xl-12">
+                                    <input type="password" name="password" placeholder="请输入密码" required  class="form-control" v-model="password" @blur="check_password" />
+                                </div>
+                                <small class="form-text text-muted ml-1 text-right" v-show="password_error" >[[password_error_message]]</small>
+                            </div>
+                            <!--确认密码-->
+                            <div class="form-group">
+                                <label >确认密码:</label>
+                                <div class="col-xl-12">
+                                    <input type="password" name="password2" placeholder="请输入确认密码" required  class="form-control" v-model="password2" @blur="check_password2"/>
+                                </div>
+                                <small class="form-text text-muted ml-1 text-right" v-show="password2_error" >[[password2_error_message]]</small>
+                            </div>
+                           <!--图片验证码-->
+                            <div class="form-group">
+                                <label >图片验证码:</label>
+                                <div class="row container">
+                                    <div class="col-7">
+                                        <input type="text" name="imgage_code" placeholder="请输入图片验证码" required  class="form-control" v-model="image_code" @blur="check_image_code"/>
+                                    </div>
+                                    <div class="col-5">
+                                        <img :src="image_code_url" @click="generate_image_code" alt="" style="width: 110px;height: 40px;">
+                                        <small class="form-text text-muted ml-1 text-right" v-show="image_code_error" >[[image_code_error_message]]</small>
+                                    </div>
+                                </div>
+                            </div>
+                           <!--短信验证码-->
+                            <div class="form-group">
+                                <label >短信验证码:</label>
+                                <div class="row container">
+                                    <div class="col-7">
+                                        <input type="text" name="sms_code" placeholder="请输入短信验证码" required class="form-control" v-model="sms_code" @blur="check_sms_code"/>
+                                    </div>
+                                    <div class="col-5">
+                                        <span class="primaryAction btn btn-primary" @click="send_sms_code">[[sms_code_message]]</span>
+                                        <small class="form-text text-muted ml-1 text-right" v-show="sms_code_error" >[[sms_code_error_message]]</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button class="primaryAction btn btn-outline-secondary btn-block" type="submit" id="submit_logon" @click="logon_submit">
+                                    注册
+                                </button>
+                            </div>
+                        </form>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- 登录模态 -->
+	<div class="modal fade" id="login">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title" id="loginLabel">
+						登录
+					</h5>
+					<button  class="close" data-dismiss="modal">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body">
+					<div class="container-fluid">
+						<form class="login" id="login_form" method="POST">
+                            {% csrf_token %}
+							<div class="form-group">
+								<label for="id_login" class="col-form-label">手机号: </label>
+                                <input type="text" name="mobile" placeholder="请输入手机号" autofocus="autofocus" required id="id_login" class="form-control" v-model="mobile" @blur="check_mobile"/>
+                                <small class="form-text text-muted ml-1 text-right" v-show="mobile_error" >[[mobile_error_message]]</small>
+							</div>
+							<div class="form-group">
+								<label for="id_password" class="col-form-label">密码：</label>
+								<input type="password" name="password" placeholder="请输入密码" required id="id_password" class="form-control" v-model="password" @blur="check_password"/>
+                                <small class="form-text text-muted ml-1 text-right" v-show="password_error" >[[password_error_message]]</small>
+							</div>
+                            <div class="custom-control custom-checkbox mb-2">
+                                <div class="reset">
+                                    <input type="checkbox" name="remember" id="id_remember" checked class="custom-control-input" v-model="remembered"/>
+                                    <label for="id_remember" class="custom-control-label">保持登录</label>
+                                </div>
+                                <a href="#" data-dismiss="modal" class="reset" data-toggle="modal" data-target="#forget">忘记密码</a>
+                            </div>
+                            <div class="modal-footer">
+                                <button class="btn btn-outline-success btn-block primaryAction" type="submit" id="submit_login" @click="login_submit">
+                                    登录
+                                </button>
+                                <button class="btn btn-outline-info btn-block" disabled>
+                                    使用其他方法登录
+                                </button>
+                            </div>
+						</form>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- 忘记密码模态 -->
+	<div class="modal fade" id="forget" data-backdrop="static">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title" id="forgetLabel">
+						忘记密码
+					</h5>
+					<button class="close" data-dismiss="modal">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body">
+					<div class="container-fluid">
+						<form class="login" id="forget_form" method="GET">
+                            {% csrf_token %}
+                            <!--手机号-->
+                            <div class="form-group">
+                                <label >手机号: </label>
+                                <div class="col-lg-12">
+                                    <input type="text" name="mobile" placeholder="请输入手机号" autofocus="autofocus" required
+                                           id="id_forget" class="form-control" v-model="mobile" />
+                                </div>
+                                <small class="form-text text-muted ml-1 text-right" v-show="mobile_error" >[[mobile_error_message]]</small>
+                            </div>
+                            <!--密码-->
+                            <div class="form-group">
+                                <label >密码:</label>
+                                <div class="col-xl-12">
+                                    <input type="password" name="password" placeholder="请输入密码" required  class="form-control" v-model="password" @blur="check_password" />
+                                </div>
+                                <small class="form-text text-muted ml-1 text-right" v-show="password_error" >[[password_error_message]]</small>
+                            </div>
+                            <!--确认密码-->
+                            <div class="form-group">
+                                <label >确认密码:</label>
+                                <div class="col-xl-12">
+                                    <input type="password" name="password2" placeholder="请输入确认密码" required  class="form-control" v-model="password2" @blur="check_password2"/>
+                                </div>
+                                <small class="form-text text-muted ml-1 text-right" v-show="password2_error" >[[password2_error_message]]</small>
+                            </div>
+                           <!--图片验证码-->
+                            <div class="form-group">
+                                <label >图片验证码:</label>
+                                <div class="row container">
+                                    <div class="col-7">
+                                        <input type="text" name="imgage_code" placeholder="请输入图片验证码" required  class="form-control" v-model="image_code" @blur="check_image_code"/>
+                                    </div>
+                                    <div class="col-5">
+                                        <img :src="image_code_url" @click="generate_image_code" alt="" style="width: 110px;height: 40px;">
+                                        <small class="form-text text-muted ml-1 text-right" v-show="image_code_error" >[[image_code_error_message]]</small>
+                                    </div>
+                                </div>
+                            </div>
+                           <!--短信验证码-->
+                            <div class="form-group">
+                                <label >短信验证码:</label>
+                                <div class="row container">
+                                    <div class="col-7">
+                                        <input type="text" name="sms_code" placeholder="请输入短信验证码" required class="form-control" v-model="sms_code" @blur="check_sms_code"/>
+                                    </div>
+                                    <div class="col-5">
+                                        <span class="primaryAction btn btn-primary" @click="send_sms_code">[[sms_code_message]]</span>
+                                        <small class="form-text text-muted ml-1 text-right" v-show="sms_code_error" >[[sms_code_error_message]]</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button class="primaryAction btn btn-outline-info btn-block" type="submit" id="submit_forget" @click="logon_submit">
+                                    修改密码
+                                </button>
+                            </div>
+                        </form>
+					</div>
+                </div>
+			</div>
+		</div>
+	</div>
+	
+	<!-- 跟随页面导航栏 -->
+	<div class="d-none d-xl-block fixNavBox">
+		<div class="fixNav">
+			<nav class="navbar navbar-dark bg-dark">
+				<ul class="navbar-nav flex-column">
+                    {% for cat in categories %}
+                        {% if cat.id == category.id %}
+                            <li class="nav-item active">
+                                <a class="nav-link" href="{% url 'home:blog' %}?cat_id={{ cat.id }}">{{ cat.title }}</a>
+                            </li>
+                        {% else %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'home:blog' %}?cat_id={{ cat.id }}">{{ cat.title }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+				</ul>
+			</nav>
+		</div>
+	</div>
+	
+	<!-- 中小屏幕导航栏 -->
+	<div class="d-xl-none">
+		<nav class="navbar navbar-dark bg-dark fixed-top">
+    		<button class="navbar-toggler btn-sm" data-toggle="collapse" data-target=".navbarContent">
+      			<span class="navbar-toggler-icon"></span>
+    		</button>
+    		<div class="collapse navbar-collapse navbarContent">
+                <div class="d-block text-right list-group">
+                    <label><input class="input-sm search list-group-item-text"></label>
+                    <button class="btn btn-sm btn-outline-info search float-right list-group-item-info">Search</button>
+                </div>
+            </div>
+            <div class="nav ml-auto navbarContent show" v-if="is_login">
+                <span class="text-white">[[username]]</span>
+            </div>
+			<div class="nav ml-auto collapse navbarContent show" v-else>
+				<a href="" class="text-light" data-toggle="modal" data-target="#login">登录</a>
+				<b class="text-light">&nbsp;/&nbsp;</b>
+				<a href="" class="text-light" data-toggle="modal" data-target="#logon">注册</a>
+			</div>
+	  		<div class="collapse navbar-collapse navbarContent">
+	    		<div class="bg-dark p-3">
+	      			<ul class="navbar-nav flex-column">
+						<li class="nav-item">
+							<a class="nav-link text-center" href="{% url 'home:index' %}">首页</a>
+						</li>
+						<li class="nav-item">
+							<a class="nav-link text-center" href="{% url 'home:tool' %}">工具</a>
+						</li>
+						<li class="nav-item">
+							<a class="nav-link text-center" href="#">图鉴</a>
+						</li>
+                        {% for cat in categories %}
+                            {% if cat.id == category.id %}
+                                <li class="nav-item active">
+                                    <a class="nav-link text-center" href="{% url 'home:blog' %}?cat_id={{ cat.id }}">{{ cat.title }}</a>
+                                </li>
+                            {% else %}
+                                <li class="nav-item">
+                                    <a class="nav-link text-center" href="{% url 'home:blog' %}?cat_id={{ cat.id }}">{{ cat.title }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                        <div class="dropdown-divider" v-if="is_login"></div>
+                        <li class="nav-item">
+							<a class="nav-link text-center" href="{% url 'users:home' %}" v-if="is_login">信息修改</a>
+						</li>
+                        <li class="nav-item">
+							<a class="nav-link text-center" href="{% url 'users:writeblog' %}" v-if="is_login">帖子撰写</a>
+						</li>
+                        <li class="nav-item">
+							<a class="nav-link text-center disabled" href="#" v-if="is_login">外观商城</a>
+						</li>
+                        <div class="dropdown-divider" v-if="is_login"></div>
+                        <li class="nav-item">
+							<a class="nav-link text-center" href="{% url 'users:logout' %}" v-if="is_login">退出登录</a>
+						</li>
+					</ul>
+	    		</div>
+	  		</div>
+  		</nav>
+  		<br>
+  		<br>
+	</div>
+
+	<!-- 大屏幕导航栏 -->
+	<div class="d-xl-block d-none">
+		<nav class="navbar navbar-dark bg-dark navbar-expand-xl">
+			<a class="navbar-brand" href="https://ak.hypergryph.com/index">
+				<img src="{% static 'img/logo_Degenerate_arrow.png' %}" width="30" height="30" title="官网" alt="">
+				Degenerate arrow
+			</a>
+			<div class="collapse navbar-collapse">
+				<ul class="navbar-nav mr-auto">
+					<li class="nav-item">
+						<a class="nav-link" href="{% url 'home:index' %}">首页</a>
+					</li>
+					<li class="nav-item">
+						<a class="nav-link" href="{% url 'home:tool' %}">工具</a>
+					</li>
+					<li class="nav-item">
+						<a class="nav-link" href="#">图鉴</a>
+					</li>
+                    <li class="nav-item">
+						<a class="nav-link active" href="{% url 'home:blog' %}">帖子</a>
+					</li>
+				</ul>
+				<form class="form-inline my-2 my-lg-0 mb-2">
+                    <div class="form-group">
+					    <input class="from-control mr-sm-2" type="search">
+					    <button class="btn btn-sm btn-outline-info my-sm-2">Search</button>
+                    </div>
+				</form>
+			</div>
+		</nav>
+	</div>
+    {% for message in messages %}
+    <div class="d-xl-none alert alert-{{ message.tags }} alert-dismissible position-fixed" style="width: 100%;z-index: 9999;" role="alert">
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+        </button>
+        {{ message }}
+    </div>
+    {% endfor %}
+	<br>
+
+	<!-- 文章概览图 -->
+	<!-- 大屏幕 -->
+	<div class="container d-xl-block d-none">
+        {% for article in articles %}
+	        <div class="card text-white bg-dark border-light mb-3 cardBox">
+                <div class="row no-gutters">
+                    <div class="col-xs-4">
+                        <img src="{{ article.avatar.url }}" class="card-img" alt="avatar" style="width: 20vw">
+                    </div>
+                    <div class="col-xs-8">
+                        <div class="card-body">
+                            <h5 class="card-title"><b><a href="{% url 'home:detail' %}?id={{ article.id }}" class="stretched-link">{{ article.title }}</a></b></h5>
+                            <p class="card-text">{{ article.sumary }}</p>
+                            <span class="card-text"><i class="far fa-eye text-white-50"></i>&nbsp;<small class="text-muted">{{ article.total_views }}&emsp;</small></span>
+                            <span class="card-text"><i class="far fa-comment text-white-50"></i>&nbsp;<small class="text-muted">{{ article.comments_count }}&emsp;</small></span>
+                            <span class="card-text"><i class="far fa-clock text-white-50"></i>&nbsp;<small class="text-muted">{{ article.created | date }}</small></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+	</div>
+	<!-- 中小屏幕 -->
+	<div class="container d-xl-none">
+        {% for article in articles %}
+            <div class="card text-white bg-dark border-light mb-3 cardBox">
+                <img src="{{ article.avatar.url }}" class="card-img-top" alt="avatar">
+                <div class="card-body">
+                    <h5 class="card-title"><b><a href="{% url 'home:detail' %}?id={{ article.id }}" style="color: white" class="stretched-link">{{ article.title }}</a></b></h5>
+                    <p class="card-text">{{ article.sumary }}</p>
+                    <span class="card-text"><i class="far fa-eye text-white-50"></i>&nbsp;<small class="text-muted">{{ article.total_views }}&emsp;</small></span>
+                    <span class="card-text"><i class="far fa-comment text-white-50"></i>&nbsp;<small class="text-muted">{{ article.comments_count }}&emsp;</small></span>
+                    <span class="card-text"><i class="far fa-clock text-white-50"></i>&nbsp;<small class="text-muted">{{ article.created | date }}</small></span>
+                </div>
+            </div>
+        {% endfor %}
+	</div>
+    <!-- 页码导航 -->
+    <div class="pagenation" style="text-align: center">
+        <div id="pagination" class="page"></div>
+    </div>
+
+</div>
+</body>
+<footer>
+    {% for message in messages %}
+        <div class="d-xl-block d-none position-fixed bottom-0 right-0 p-3" style="z-index: 5; right: 0; bottom: 0;">
+            <div class="toast show" id="toastBox">
+                <div class="toast-header">
+                    <span class="fas fa-info-circle"></span>&nbsp;
+                    <strong class="mr-auto">{{ message.tags }}</strong>
+                    <button type="button" class="ml-2 mb-1 close" id="closeBtn">
+                      <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="toast-body">
+                    {{ message }}
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+	<div class="footerBox">
+		<br>
+		<p>联系方式 | 合作事宜 | 版权投诉</p>
+		<p>Copyright &copy; 2020 Asura</p>
+	</div>
+    <script src="{% static 'js/host.js' %}"></script>
+    <script src="{% static 'js/common.js'%}"></script>
+    <script src="{% static 'js/blog.js'%}"></script>
+    <script src="{% static 'lib/jquery.pagination.min.js' %}"></script>
+    <!-- Live2DCubismCore script -->
+	<script src="https://unpkg.com/core-js-bundle@3.6.1/minified.js"></script>
+	<script src="https://cdn.jsdelivr.net/gh/wangstong/live2dm3/live2d/js/live2dcubismcore.js"></script>
+	<!-- Build script -->
+	<script src="https://cdn.jsdelivr.net/gh/wangstong/live2dm3/live2d/js/bundle.js"></script>
+	<script type="text/javascript">
+	  var resourcesPath = "{% static 'live2d/' %}"; // 指定资源文件（模型）保存的路径
+	  var backImageName = ''; // 指定背景图片
+	  var modelDir = ['Excsiai']; // 指定需要加载的模型
+	  initDefine(resourcesPath, backImageName, modelDir); // 初始化模型
+	</script>
+    <script type="text/javascript">
+        $(function () {
+            $('#pagination').pagination({
+                currentPage: {{ page_num }},
+                totalPage: {{ total_page }},
+                callback:function (current) {
+
+                    location.href = '{% url 'home:blog' %}?cat_id={{ category.id }}&page_size={{ page_size }}&page_num='+current;
+                }
+            })
+        });
+    </script>
+</footer>
+</html>

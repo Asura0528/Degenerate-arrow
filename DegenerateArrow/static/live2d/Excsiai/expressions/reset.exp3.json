@@ -1,0 +1,30 @@
+{
+	"Type": "Live2D Expression",
+	"Parameters": [
+		{
+			"Id": "heart",
+			"Value": 0,
+			"Blend": "Add"
+		},
+		{
+			"Id": "aha",
+			"Value": 0,
+			"Blend": "Add"
+		},
+		{
+			"Id": "star",
+			"Value": 0,
+			"Blend": "Add"
+		},
+		{
+			"Id": "Black",
+			"Value": 0,
+			"Blend": "Add"
+		},
+		{
+			"Id": "Red",
+			"Value": 0,
+			"Blend": "Add"
+		}
+	]
+}

@@ -1,0 +1,130 @@
+/* 全局样式 */
+body::-webkit-scrollbar{
+	display: none;
+}
+body {
+	overflow-x: hidden;
+ 	overflow-y: scroll;
+	background-image: linear-gradient(#232526,#414345);
+	background-repeat: no-repeat;
+	/*background-size: cover;*/
+	background-attachment: fixed;
+}
+
+/* 搜索样式 */
+/* 大屏幕搜索样式 */
+.searchs {
+	text-align: center;
+	margin-right: 5px;
+}
+/* 小屏幕搜索样式 */
+.search {
+	text-align: center;
+	margin: 0 0 0 5px
+}
+
+/* 轮播图样式 */
+.carouselBox {
+	display: block;
+	margin: 0 auto;
+}
+
+/* 卡片样式 */
+.cardBox {
+	box-shadow: 0 5px 5px black;
+	margin: 0 auto;
+}
+
+/* 侧边导航栏样式 */
+.navIcon {
+	text-align: center;
+}
+.fixNavBox {
+	position: fixed;
+	left: 85%;
+	top: 30%;
+	animation: 6s showFixNavBox forwards;
+}
+.fixNav {
+	box-shadow: 0 0 5px black;
+	border-left: solid #434343;
+	border-right: solid #434343;
+}
+.fixNavBox a{
+	font-size: small;
+}
+.fixNavBox a:hover{
+	font-size: small;
+}
+
+/* 个人信息栏样式 */
+.informationBox {
+	border-style: solid;
+	border-color: #434343;
+	left: 2%;
+	top: 10%;
+	position: fixed;
+	box-shadow: 0 5px 5px black;
+	background-size: 200% 100%;
+	background-image: linear-gradient(315deg,#000000,#2c3e50,#bdc3c7);
+	animation: 6s showInformationBox forwards;
+}
+/* 图片盒子 */
+.imgBox {
+	text-align: center;
+	margin: 50px auto;
+}
+/* 登录盒子 */
+.loginBox {
+	text-align: center;
+	margin: 20px 50px 50px 50px;
+}
+/* 忘记密码 */
+.reset {
+	display: block;
+	text-align: right;
+}
+
+/* 底部盒子 */
+.footerBox {
+	color: white;
+	text-align: center;
+}
+
+
+
+/*动画*/
+/*个人信息栏动画效果*/
+@keyframes showInformationBox
+{
+    from {
+        opacity: 0;
+        -webkit-transform: translate(-1000px, 0); 
+        transform: stranslate(-1000px,0); 
+    }
+    to {
+        opacity:1;
+    }
+}
+@keyframes ibcbgposition
+{
+	0% {
+        background-position: 0 0;
+    }
+    100% {
+        background-position: 100% 0;
+    }
+}
+
+/*侧边导航栏动画*/
+@keyframes showFixNavBox
+{
+    from {
+        opacity: 0;
+        -webkit-transform: translate(1000px,0); 
+        transform: stranslate(1000px,0); 
+    }
+    to {
+        opacity:1;
+    }
+}

@@ -1,0 +1,50 @@
+{
+	"Version": 3,
+	"FileReferences": {
+		"Moc": "Excsiai.moc3",
+		"Textures": [
+			"Excsiai.4096/texture_00.png"
+		],
+		"Physics": "Excsiai.physics3.json",
+		"Expressions": [
+			{
+				"Name": "aha",
+				"File": "expressions/aha.exp3.json"
+			},
+			{
+				"Name": "heart",
+				"File": "expressions/heart.exp3.json"
+			},
+			{
+				"Name": "star",
+				"File": "expressions/star.exp3.json"
+			},
+			{
+				"Name": "red",
+				"File": "expressions/red.exp3.json"
+			},
+			{
+				"Name": "black",
+				"File": "expressions/black.exp3.json"
+			},
+			{
+				"Name": "reset",
+				"File": "expressions/reset.exp3.json"
+			}
+		],
+		"Motions": {
+			"": [
+				{
+					"File": "motions/wink.motion3.json"
+				},
+				{
+					"File": "motions/hi_move.motion3.json"
+				},
+				{
+					"File": "motions/Idle.motion3.json"
+				}
+			]
+		}
+	},
+	"HitAreas": []
+}
